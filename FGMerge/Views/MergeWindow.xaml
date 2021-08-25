@@ -1,0 +1,33 @@
+﻿<reactiveUi:ReactiveWindow x:TypeArguments="viewmodels:MergeViewModel" x:Class="FGMerge.Views.MergeWindow"
+                          xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                          xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                          xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                          xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                          xmlns:local="clr-namespace:FGMerge" xmlns:viewmodels="clr-namespace:FGMerge.ViewModels"
+                          xmlns:reactiveUi="http://reactiveui.net"
+                          xmlns:views="clr-namespace:FGMerge.Views"
+                          mc:Ignorable="d" d:DataContext="{d:DesignInstance Type=viewmodels:MergeViewModel}"
+                          Title="MergeWindow" Height="1040" Width="1920" WindowState="Maximized"
+                          Background="{DynamicResource {x:Static SystemColors.WindowBrushKey}}">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" MinWidth="50" />
+            <ColumnDefinition Width="5"/>
+            <ColumnDefinition Width="6*" MinWidth="250" />
+        </Grid.ColumnDefinitions>
+        <GridSplitter Grid.Column="1" ResizeDirection="Columns" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+
+        <TreeView ItemContainerStyle="{DynamicResource TreeViewItemContainerStyle}" Grid.Column="0" x:Name="MergeList">
+            <TreeView.Resources>
+                <HierarchicalDataTemplate DataType="{x:Type viewmodels:CategoryViewModel}" ItemsSource="{Binding Nodes}">
+                    <views:MergeCategoryListItem />
+                </HierarchicalDataTemplate>
+                <HierarchicalDataTemplate DataType="{x:Type viewmodels:NodeViewModel}">
+                    <views:MergeNodeListItem />
+                </HierarchicalDataTemplate>
+            </TreeView.Resources>
+        </TreeView>
+
+        <views:SelectedNodeMergeControl x:Name="SelectedView" Grid.Column="2" />
+    </Grid>
+</reactiveUi:ReactiveWindow>
