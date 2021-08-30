@@ -35,15 +35,15 @@ namespace FGMerge.Views
                 this.Bind(ViewModel, vm => vm.SelectedNode, view => view.SelectedView.ViewModel)
                     .DisposeWith(disposables);
 
-                this.WhenAnyValue(x => x.MergeList.SelectedItem).BindTo(this, x => x.ViewModel.SelectedNode);
+                this.WhenAnyValue(x => x.MergeList.SelectedItem).BindTo(this, x => x.ViewModel!.SelectedNode);
             });
         }
 
-        public void Show(IReadOnlyCollection<MergeCategory> mergeCategories)
+        public void Show(IReadOnlyCollection<MergeGroup> mergeGroups)
         {
             ViewModel = new MergeViewModel();
-            ViewModel.Initialize(mergeCategories);
-            MergeList.ItemsSource = ViewModel.Categories;
+            ViewModel.Initialize(mergeGroups);
+            MergeList.ItemsSource = ViewModel.Groups;
             Show();
         }
 
@@ -51,7 +51,7 @@ namespace FGMerge.Views
         {
             if (ViewModel != null)
             {
-                bool hasConflicts = ViewModel.Categories.Any(category => category.HasConflicts);
+                bool hasConflicts = ViewModel.Groups.Any(group => group.HasConflicts);
                 string message = "Would you like to save the merged results?";
                 MessageBoxButton buttons = MessageBoxButton.YesNoCancel;
                 MessageBoxImage icon = MessageBoxImage.Question;

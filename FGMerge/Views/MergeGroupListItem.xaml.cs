@@ -6,17 +6,17 @@ using ReactiveUI;
 namespace FGMerge.Views
 {
     /// <summary>
-    /// Interaction logic for MergeCategoryListItem.xaml
+    /// Interaction logic for MergeGroupListItem.xaml
     /// </summary>
-    public partial class MergeCategoryListItem
+    public partial class MergeGroupListItem
     {
-        public MergeCategoryListItem()
+        public MergeGroupListItem()
         {
             InitializeComponent();
 
             this.WhenActivated(disposables =>
             {
-                ViewModel = DataContext as CategoryViewModel;
+                ViewModel = DataContext as GroupViewModel;
                 this.Bind(ViewModel, vm => vm.Name, view => view.NameText.Text)
                     .DisposeWith(disposables);
 

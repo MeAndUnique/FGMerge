@@ -18,22 +18,22 @@ namespace FGMerge
             _settings = settings.Value;
         }
 
-        public IReadOnlyCollection<MergeCategory> Calculate(FileInfo baseFile, FileInfo localFile, FileInfo remoteFile)
+        public IReadOnlyCollection<MergeGroup> Calculate(FileInfo baseFile, FileInfo localFile, FileInfo remoteFile)
         {
             XmlDocument baseDoc = _loader.Load(baseFile.OpenRead());
             XmlDocument localDoc = _loader.Load(localFile.OpenRead());
             XmlDocument remoteDoc = _loader.Load(remoteFile.OpenRead());
 
-            Dictionary<string, MergeCategoryBuilder> nodesByCategoryAndId = new();
-            AddCategories(nodesByCategoryAndId, baseDoc.SelectSingleNode("root"), (node, builder) => builder.BaseNode = node);
-            AddCategories(nodesByCategoryAndId, localDoc.SelectSingleNode("root"), (node, builder) => builder.LocalNode = node);
-            AddCategories(nodesByCategoryAndId, remoteDoc.SelectSingleNode("root"), (node, builder) => builder.RemoteNode = node);
+            Dictionary<string, MergeGroupBuilder> nodesByGroupAndId = new();
+            AddGroups(nodesByGroupAndId, baseDoc.SelectSingleNode("root")!, (node, builder) => builder.BaseNode = node);
+            AddGroups(nodesByGroupAndId, remoteDoc.SelectSingleNode("root")!, (node, builder) => builder.RemoteNode = node);
+            AddGroups(nodesByGroupAndId, localDoc.SelectSingleNode("root")!, (node, builder) => builder.LocalNode = node); // Local last for prioritization
 
-            foreach (MergeCategoryBuilder categoryBuilder in nodesByCategoryAndId.Values)
+            foreach (MergeGroupBuilder groupBuilder in nodesByGroupAndId.Values)
             {
                 List<MergeNodeBuilder> renamedNodes = new();
-                HashSet<string> knownIds = new(categoryBuilder.NodesById.Keys);
-                foreach (MergeNodeBuilder builder in categoryBuilder.NodesById.Values)
+                HashSet<string> knownIds = new(groupBuilder.NodesById.Keys);
+                foreach (MergeNodeBuilder builder in groupBuilder.NodesById.Values)
                 {
                     if (!CheckBuilder(builder))
                     {
@@ -44,7 +44,7 @@ namespace FGMerge
                         knownIds.Add(id);
 
                         XmlElement renamedElement = remoteDoc.CreateElement($"id-{newId:D5}");
-                        renamedElement.InnerXml = builder.RemoteNode.InnerXml;
+                        renamedElement.InnerXml = builder.RemoteNode!.InnerXml;
 
                         MergeNodeBuilder renamedBuilder = new()
                         {
@@ -61,60 +61,67 @@ namespace FGMerge
 
                 foreach (MergeNodeBuilder renamedNode in renamedNodes)
                 {
-                    categoryBuilder.NodesById[renamedNode.Id] = renamedNode;
+                    groupBuilder.NodesById[renamedNode.Id] = renamedNode;
                 }
             }
 
-            return nodesByCategoryAndId.Values.Select(categoryBuilder=>categoryBuilder.Build()).ToList();
+            return nodesByGroupAndId.Values.Select(groupBuilder => groupBuilder.Build()).ToList();
         }
 
-        private void AddCategories(Dictionary<string, MergeCategoryBuilder> nodesByCategoryAndId,
+        private void AddGroups(Dictionary<string, MergeGroupBuilder> nodesByGroupAndId,
             XmlNode rootNode,
             Action<XmlElement, MergeNodeBuilder> setter)
         {
-            foreach (XmlElement categoryNode in rootNode.ChildNodes.OfType<XmlElement>())
+            foreach (XmlElement groupNode in rootNode.ChildNodes.OfType<XmlElement>())
             {
-                IEnumerable<XmlElement> nodes = categoryNode.ChildNodes.OfType<XmlElement>();
-                if (_settings.ComplexCategories.TryGetValue(categoryNode.Name, out ISet<string> listFields))
+                IEnumerable<XmlElement> nodes = groupNode.ChildNodes.OfType<XmlElement>();
+                if (_settings.ComplexGroups.TryGetValue(groupNode.Name, out ISet<string>? listFields))
                 {
                     foreach (XmlElement listNode in nodes.Where(node=>listFields.Contains(node.Name)))
                     {
-                        string listCategoryName = $"{categoryNode.Name}/{listNode.Name}";
-                        if (!nodesByCategoryAndId.TryGetValue(listCategoryName, out MergeCategoryBuilder listCategoryBuilder))
+                        string listGroupName = $"{groupNode.Name}/{listNode.Name}";
+                        if (!nodesByGroupAndId.TryGetValue(listGroupName, out MergeGroupBuilder? listGroupBuilder))
                         {
-                            listCategoryBuilder = new MergeCategoryBuilder { Name = listCategoryName };
-                            nodesByCategoryAndId[listCategoryName] = listCategoryBuilder;
+                            listGroupBuilder = new MergeGroupBuilder { Name = listGroupName };
+                            nodesByGroupAndId[listGroupName] = listGroupBuilder;
                         }
-                        AddNodes(listCategoryBuilder, listNode.ChildNodes.OfType<XmlElement>(), setter);
+                        AddNodes(listGroupBuilder, listNode.ChildNodes.OfType<XmlElement>(), setter);
                     }
 
-                    nodes = categoryNode.ChildNodes.OfType<XmlElement>().Where(node => !listFields.Contains(node.Name));
+                    nodes = groupNode.ChildNodes.OfType<XmlElement>().Where(node => !listFields.Contains(node.Name));
                 }
 
-                string categoryName = categoryNode.Name;
-                if (!nodesByCategoryAndId.TryGetValue(categoryName, out MergeCategoryBuilder categoryBuilder))
+                string groupName = groupNode.Name;
+                if (!nodesByGroupAndId.TryGetValue(groupName, out MergeGroupBuilder? groupBuilder))
                 {
-                    categoryBuilder = new MergeCategoryBuilder { Name = categoryName };
-                    nodesByCategoryAndId[categoryName] = categoryBuilder;
+                    groupBuilder = new MergeGroupBuilder { Name = groupName };
+                    nodesByGroupAndId[groupName] = groupBuilder;
                 }
-                AddNodes(categoryBuilder, nodes, setter);
+                AddNodes(groupBuilder, nodes, setter);
             }
         }
 
-        private void AddNodes(MergeCategoryBuilder categoryBuilder, IEnumerable<XmlElement> nodes, Action<XmlElement, MergeNodeBuilder> setter)
+        private void AddNodes(MergeGroupBuilder groupBuilder, IEnumerable<XmlElement> nodes, Action<XmlElement, MergeNodeBuilder> setter, string? category = null)
         {
             foreach (XmlElement node in nodes)
             {
                 if (node.Name == "public")
                 {
-                    categoryBuilder.IsPublic = true;
+                    groupBuilder.IsPublic = true;
                     continue;
                 }
 
-                if (!categoryBuilder.NodesById.TryGetValue(node.Name, out MergeNodeBuilder builder))
+                // TODO category stuff here
+                if (node.Name == "category")
                 {
-                    builder = new MergeNodeBuilder { Id = node.Name };
-                    categoryBuilder.NodesById[node.Name] = builder;
+                    string categoryName = node.GetAttribute("name");
+                    AddNodes(groupBuilder, node.ChildNodes.OfType<XmlElement>(), setter, categoryName);
+                }
+
+                if (!groupBuilder.NodesById.TryGetValue(node.Name, out MergeNodeBuilder? builder))
+                {
+                    builder = new MergeNodeBuilder { Id = node.Name, Category = category };
+                    groupBuilder.NodesById[node.Name] = builder;
                 }
 
                 setter(node, builder);
@@ -162,7 +169,7 @@ namespace FGMerge
             return true;
         }
 
-        private class MergeCategoryBuilder
+        private class MergeGroupBuilder
         {
             public string Name { get; set; }
 
@@ -170,24 +177,26 @@ namespace FGMerge
 
             public Dictionary<string, MergeNodeBuilder> NodesById { get; } = new();
 
-            public MergeCategory Build() => new(Name, IsPublic, NodesById.Values.Select(nodeBuilder => nodeBuilder.Build()).ToList());
+            public MergeGroup Build() => new(Name, IsPublic, NodesById.Values.Select(nodeBuilder => nodeBuilder.Build()).ToList());
         }
 
         private class MergeNodeBuilder
         {
             public string Id { get; set; }
 
-            public XmlElement BaseNode { get; set; }
+            public string? Category { get; set; }
 
-            public XmlElement LocalNode { get; set; }
+            public XmlElement? BaseNode { get; set; }
 
-            public XmlElement RemoteNode { get; set; }
+            public XmlElement? LocalNode { get; set; }
+
+            public XmlElement? RemoteNode { get; set; }
 
             public bool Merged { get; set; }
 
-            public XmlElement ResultNode { get; set; }
+            public XmlElement? ResultNode { get; set; }
 
-            public MergeNode Build() => new(Id, BaseNode, LocalNode, RemoteNode, Merged, ResultNode);
+            public MergeNode Build() => new(Id, Category, BaseNode, LocalNode, RemoteNode, Merged, ResultNode);
         }
     }
 }

@@ -28,7 +28,7 @@ namespace FGMerge
 
         public Task StartAsync(CancellationToken cancellationToken)
         {
-            switch (_settings.ExecutionMode?.ToLowerInvariant())
+            switch (_settings.ExecutionMode.ToLowerInvariant())
             {
                 case "diff":
                     _errorView.ShowErrorMessage("Sorry, diff viewing is not yet supported.");
@@ -52,8 +52,8 @@ namespace FGMerge
 
         private void LaunchDiff()
         {
-            FileInfo localFile = VerifyFile(nameof(_settings.LocalFile), _settings.LocalFile);
-            FileInfo remoteFile = VerifyFile(nameof(_settings.RemoteFile), _settings.RemoteFile);
+            FileInfo? localFile = VerifyFile(nameof(_settings.LocalFile), _settings.LocalFile);
+            FileInfo? remoteFile = VerifyFile(nameof(_settings.RemoteFile), _settings.RemoteFile);
 
             if (CheckFile(localFile) && CheckFile(remoteFile))
             {
@@ -67,21 +67,21 @@ namespace FGMerge
 
         private void LaunchMerge()
         {
-            FileInfo baseFile = VerifyFile(nameof(_settings.BaseFile), _settings.BaseFile);
-            FileInfo localFile = VerifyFile(nameof(_settings.LocalFile), _settings.LocalFile);
-            FileInfo remoteFile = VerifyFile(nameof(_settings.RemoteFile), _settings.RemoteFile);
+            FileInfo? baseFile = VerifyFile(nameof(_settings.BaseFile), _settings.BaseFile);
+            FileInfo? localFile = VerifyFile(nameof(_settings.LocalFile), _settings.LocalFile);
+            FileInfo? remoteFile = VerifyFile(nameof(_settings.RemoteFile), _settings.RemoteFile);
             VerifyFile(nameof(_settings.MergedFile), _settings.MergedFile);
 
-            if(false)// (CheckFile(baseFile) && CheckFile(localFile) && CheckFile(remoteFile))
+            if(CheckFile(baseFile) && CheckFile(localFile) && CheckFile(remoteFile))
             {
-                var mergeCategories = _mergeCalculator.Calculate(baseFile, localFile, remoteFile);
-                if (_settings.AutoResolveMerge && mergeCategories.SelectMany(category=>category.Nodes).All(node => node.MergedNode != null))
+                var mergeGroups = _mergeCalculator.Calculate(baseFile!, localFile!, remoteFile!);
+                if (_settings.AutoResolveMerge && mergeGroups.SelectMany(group=> group.Nodes).All(node => node.MergedNode != null))
                 {
-
+                    //TODO wtf man
                 }
                 else
                 {
-                    _mergeView.Show(mergeCategories);
+                    _mergeView.Show(mergeGroups);
                 }
             }
             else
@@ -90,7 +90,7 @@ namespace FGMerge
             }
         }
 
-        private FileInfo VerifyFile(string name, string file)
+        private FileInfo? VerifyFile(string name, string file)
         {
             if (string.IsNullOrWhiteSpace(file))
             {
@@ -109,7 +109,7 @@ namespace FGMerge
             }
         }
 
-        private bool CheckFile(FileInfo file)
+        private bool CheckFile(FileInfo? file)
         {
             // TODO consider more robust logic to check the contents.
             return file != null && file.Exists && file.Extension == ".xml";
@@ -130,8 +130,8 @@ namespace FGMerge
                 .Replace("$LOCAL", _settings.LocalFile)
                 .Replace("$MERGED", _settings.MergedFile)
                 .Replace("$REMOTE", _settings.RemoteFile);
-            ProcessStartInfo info = new ProcessStartInfo(exe, args) {UseShellExecute = true};
-            Process process = Process.Start(info);
+            ProcessStartInfo info = new(exe, args) {UseShellExecute = true};
+            Process? process = Process.Start(info);
             if (process != null)
             {
                 process.EnableRaisingEvents = true;
@@ -151,7 +151,7 @@ namespace FGMerge
             }
         }
 
-        private void ProcessOnExited(object sender, EventArgs e)
+        private void ProcessOnExited(object? sender, EventArgs e)
         {
             Application.Current.Shutdown((sender as Process)?.ExitCode ?? 1);
         }

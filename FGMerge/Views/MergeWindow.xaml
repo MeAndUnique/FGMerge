@@ -19,8 +19,8 @@
 
         <TreeView ItemContainerStyle="{DynamicResource TreeViewItemContainerStyle}" Grid.Column="0" x:Name="MergeList">
             <TreeView.Resources>
-                <HierarchicalDataTemplate DataType="{x:Type viewmodels:CategoryViewModel}" ItemsSource="{Binding Nodes}">
-                    <views:MergeCategoryListItem />
+                <HierarchicalDataTemplate DataType="{x:Type viewmodels:GroupViewModel}" ItemsSource="{Binding Nodes}">
+                    <views:MergeGroupListItem />
                 </HierarchicalDataTemplate>
                 <HierarchicalDataTemplate DataType="{x:Type viewmodels:NodeViewModel}">
                     <views:MergeNodeListItem />

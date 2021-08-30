@@ -2,7 +2,7 @@
   "profiles": {
     "FGMerge": {
       "commandName": "Project",
-      "commandLineArgs": "--e merge --r files\\r.xm --l files\\l.xml --b files\\b.xml --m files\\m.xml"
+      "commandLineArgs": "--e merge --r files\\r.xml --l files\\l.xml --b files\\b.xml --m files\\m.xml"
     }
   }
 }

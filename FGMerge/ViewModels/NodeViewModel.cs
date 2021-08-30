@@ -9,18 +9,20 @@ namespace FGMerge.ViewModels
     {
         public string Id { get; }
 
-        public string BaseText { get; }
+        public string? Category { get; }
 
-        public string LocalText { get; }
+        public string? BaseText { get; }
 
-        private string _mergedText;
-        public string MergedText
+        public string? LocalText { get; }
+
+        private string? _mergedText;
+        public string? MergedText
         {
             get => _mergedText;
             set => this.RaiseAndSetIfChanged(ref _mergedText, value);
         }
 
-        public string RemoteText { get; }
+        public string? RemoteText { get; }
 
         public bool HasChange { get; }
 
@@ -30,6 +32,7 @@ namespace FGMerge.ViewModels
         public NodeViewModel(MergeNode node)
         {
             Id = node.Id;
+            Category = node.Category;
             BaseText = node.BaseNode?.InnerXml;
             LocalText = node.LocalNode?.InnerXml;
             MergedText = node.MergedNode?.InnerXml;
@@ -42,7 +45,7 @@ namespace FGMerge.ViewModels
                 .ToProperty(this, x => x.HasConflict);
 
             // Creates the validation for the MergedText property.
-            this.ValidationRule( viewModel => viewModel.MergedText, ValidateXml, "The XML cannot be parsed.");
+            this.ValidationRule( viewModel => viewModel.MergedText, ValidateXml!, "The XML cannot be parsed.");
         }
 
         private bool ValidateXml(string text)

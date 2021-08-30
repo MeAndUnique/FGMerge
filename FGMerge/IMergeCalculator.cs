@@ -5,6 +5,6 @@ namespace FGMerge
 {
     public interface IMergeCalculator
     {
-        IReadOnlyCollection<MergeCategory> Calculate(FileInfo baseFile, FileInfo localFile, FileInfo remoteFile);
+        IReadOnlyCollection<MergeGroup> Calculate(FileInfo baseFile, FileInfo localFile, FileInfo remoteFile);
     }
 }

@@ -6,9 +6,9 @@ namespace FGMerge
     {
         public void Initialize(XmlDocument template);
 
-        public void AddCategory(string name, bool isPublic);
+        public void AddGroup(string name, bool isPublic);
 
-        public void AddNode(string category, string id, string innerXml);
+        public void AddNode(string group, string id, string innerXml, string? category = null);
 
         public XmlDocument Resolve();
     }

@@ -2,5 +2,11 @@
 
 namespace FGMerge
 {
-    public record MergeNode(string Id, XmlElement BaseNode, XmlElement LocalNode, XmlElement RemoteNode, bool Merged, XmlElement MergedNode = null);
+    public record MergeNode(string Id,
+        string? Category,
+        XmlElement? BaseNode,
+        XmlElement? LocalNode,
+        XmlElement? RemoteNode,
+        bool Merged,
+        XmlElement? MergedNode);
 }

@@ -8,7 +8,7 @@ using ReactiveUI;
 
 namespace FGMerge.ViewModels
 {
-    public class CategoryViewModel : ReactiveObject
+    public class GroupViewModel : ReactiveObject
     {
         public string Name { get; }
 
@@ -22,11 +22,11 @@ namespace FGMerge.ViewModels
 
         public bool HasChanges { get; }
 
-        public CategoryViewModel(MergeCategory category)
+        public GroupViewModel(MergeGroup @group)
         {
-            Name = category.Name;
-            IsPublic = category.IsPublic;
-            _nodes.AddRange(category.Nodes.Select(node => new NodeViewModel(node)));
+            Name = @group.Name;
+            IsPublic = @group.IsPublic;
+            _nodes.AddRange(@group.Nodes.Select(node => new NodeViewModel(node)));
             HasChanges = _nodes.Any(node => node.HasChange);
 
             // Here, T inherits from the ReactiveObject class.

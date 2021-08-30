@@ -4,6 +4,6 @@ namespace FGMerge.Views
 {
     public interface IMergeView
     {
-        public void Show(IReadOnlyCollection<MergeCategory> mergeCategories);
+        public void Show(IReadOnlyCollection<MergeGroup> mergeGroups);
     }
 }

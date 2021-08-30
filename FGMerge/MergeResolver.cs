@@ -4,33 +4,54 @@ namespace FGMerge
 {
     public class MergeResolver : IMergeResolver
     {
-        private XmlDocument _template;
-        private XmlElement _rootNode;
+        private XmlDocument _template = null!;
+        private XmlElement _rootNode = null!;
 
         public void Initialize(XmlDocument template)
         {
             _template = (XmlDocument)template.CloneNode(true);
-            _rootNode = (XmlElement)_template.SelectSingleNode("root");
+            _rootNode = (XmlElement)_template.SelectSingleNode("root")!;
             _rootNode.InnerXml = "";
         }
 
-        public void AddCategory(string name, bool isPublic)
+        public void AddGroup(string name, bool isPublic)
         {
-            XmlElement categoryNode = _template.CreateElement(name);
-            _rootNode.AppendChild(categoryNode);
+            XmlElement groupNode = _template.CreateElement(name);
+            _rootNode.AppendChild(groupNode);
 
             if (isPublic)
             {
                 XmlElement publicNode = _template.CreateElement("public");
-                categoryNode.AppendChild(publicNode);
+                groupNode.AppendChild(publicNode);
             }
         }
 
-        public void AddNode(string category, string id, string innerXml)
+        public void AddNode(string group, string id, string innerXml, string? category = null)
         {
-            XmlNode categoryNode = _rootNode.SelectSingleNode(category);
+            XmlElement groupNode = (XmlElement)_rootNode.SelectSingleNode(group)!;
+            XmlElement containerNode = groupNode;
+            if (!string.IsNullOrWhiteSpace(category))
+            {
+                foreach (XmlElement categoryNode in groupNode.SelectNodes("category")!)
+                {
+                    string categoryName = categoryNode.GetAttribute("name");
+                    if (categoryName == category)
+                    {
+                        containerNode = categoryNode;
+                        break;
+                    }
+                }
+
+                if(containerNode == groupNode)
+                {
+                    containerNode = _template.CreateElement(category);
+                    containerNode.SetAttribute("name", category);
+                    groupNode.AppendChild(containerNode);
+                }
+            }
+
             XmlElement node = _template.CreateElement(id);
-            categoryNode.AppendChild(node);
+            containerNode.AppendChild(node);
             node.InnerXml = innerXml;
         }
 
